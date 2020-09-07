@@ -1,8 +1,7 @@
 use bevy::prelude::*;
-mod square;
 mod puzzle;
-use crate::square::{SQUARE_SIZE};
-
+mod square;
+use crate::square::SQUARE_SIZE;
 
 fn startup_puzzle(
     mut commands: Commands,
