@@ -1,8 +1,20 @@
+use bevy::prelude::*;
 use crate::square::{Square, SquareState};
 use array2d::Array2D;
 use rand::Rng;
+
+#[derive(Bundle)]
 pub struct Puzzle {
     pub squares: Array2D<Square>,
+}
+
+impl Puzzle {
+    pub fn rows(&self) -> usize {
+        self.squares.num_rows()
+    }
+    pub fn cols(&self) -> usize {
+        self.squares.num_columns()
+    }
 }
 
 pub fn create_random_puzzle(rows: u32, columns: u32) -> Puzzle {
