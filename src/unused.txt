@@ -1,0 +1,29 @@
+%square.rs
+app.init_resource::<SquareMaterials>()
+pub struct SquareMaterials {
+    empty: ColorMaterial,
+    filled: ColorMaterial,
+    crossed: ColorMaterial
+}
+impl FromResources for SquareMaterials {
+    fn from_resources(resources: &Resources) -> Self {
+        let asset_server = resources.get::<AssetServer>().unwrap();
+        let mut textures = resources.get_mut::<Assets<Texture>>().unwrap();
+        let empty_texture_handle = asset_server
+            .load_sync(&mut textures, "assets/empty_square.png")
+            .unwrap();
+        let filled_texture_handle = asset_server
+            .load_sync(&mut textures, "assets/filled_square.png")
+            .unwrap();
+        SquareMaterials {
+            empty: empty_texture_handle.into(),
+            filled: filled_texture_handle.into(),
+            crossed: empty_texture_handle.into(),
+        }
+    }
+}
+
+%puzzle.rs
+
+pub struct PuzzleCanvasMarker {}
+pub struct UICanvasMarker {}

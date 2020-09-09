@@ -4,7 +4,7 @@ mod square;
 mod ui_elements;
 use crate::puzzle::Puzzle;
 use crate::square::{SQUARE_SIZE, SquarePlugin};
-use crate::ui_elements::{UIPlugin, PuzzleCanvasMarker};
+use crate::ui_elements::UIPlugin;
 
 fn setup(mut commands: Commands) {
     commands

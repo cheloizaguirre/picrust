@@ -5,8 +5,7 @@ pub struct SquarePlugin;
 
 impl Plugin for SquarePlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.init_resource::<SquareMaterials>()
-            .add_system(square_state_system.system());
+        app.add_system(square_state_system.system());
     }
 }
 
@@ -15,7 +14,7 @@ impl Plugin for SquarePlugin {
 pub enum SquareState {
     Filled,
     Empty,
-    Crossed
+    _Crossed
 }
 
 impl Default for SquareState {
@@ -39,38 +38,16 @@ impl Default for Square {
     }
 }
 
-pub struct SquareMaterials {
-    empty: Handle<Texture>,
-    filled: Handle<Texture>,
-    crossed: Handle<Texture>
-}
-
-impl FromResources for SquareMaterials {
-    fn from_resources(resources: &Resources) -> Self {
-        let asset_server = resources.get::<AssetServer>().unwrap();
-        let mut textures = resources.get_mut::<Assets<Texture>>().unwrap();
-        let empty_texture_handle = asset_server
-            .load_sync(&mut textures, "assets/empty_square.png")
-            .unwrap();
-        let filled_texture_handle = asset_server
-            .load_sync(&mut textures, "assets/filled_square.png")
-            .unwrap();
-        SquareMaterials {
-            empty: empty_texture_handle.into(),
-            filled: filled_texture_handle.into(),
-            crossed: empty_texture_handle.into(),
-        }
-    }
-}
-
 pub fn square_state_system(
-    materials: Res<SquareMaterials>,
-    mut query: Query<(&mut Handle<Texture>, &mut Square)>) {
-    for (mut texture, square) in &mut query.iter() {
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    entities: Query<&mut Handle<ColorMaterial>>,
+    mut query: Query<(Entity, Changed<Square>)>) {
+    for (entity, square) in &mut query.iter() {
+        let mut sprite = entities.get_mut::<Handle<ColorMaterial>>(entity).unwrap();
         match square.current {
-            SquareState::Filled => *texture = materials.filled,
-            SquareState::Empty => *texture = materials.empty,
-            SquareState::Crossed => *texture = materials.crossed,
+            SquareState::Empty => *sprite = materials.add(Color::rgb(0.1, 0.1, 0.1).into()),
+            SquareState::Filled => *sprite = materials.add(Color::rgb(0.1, 0.1, 0.9).into()),
+            SquareState::_Crossed => *sprite = materials.add(Color::rgb(0.1, 0.1, 0.9).into()),
         }
     }
 }

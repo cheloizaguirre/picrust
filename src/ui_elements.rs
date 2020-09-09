@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::puzzle;
+use crate::square::Square;
 pub struct UIPlugin;
 
 impl Plugin for UIPlugin {
@@ -10,8 +10,6 @@ impl Plugin for UIPlugin {
     }
 }
 
-pub struct PuzzleCanvasMarker {}
-pub struct UICanvasMarker {}
 
 struct UIMaterials {
     normal: Handle<ColorMaterial>,
@@ -33,7 +31,6 @@ impl FromResources for UIMaterials {
 }
 
 fn ui_system(
-    mut commands: Commands,
     button_materials: Res<UIMaterials>,
     mut interaction_query: Query<(
         &Button,
@@ -41,12 +38,15 @@ fn ui_system(
         &mut Handle<ColorMaterial>,
         &Children,
     )>,
+    mut squares_query: Query<&mut Square>,
 ) {
     for (_button, interaction, mut material, _children) in &mut interaction_query.iter() {
         match *interaction {
             Interaction::Clicked => {
                 *material = button_materials.pressed;
-                commands.spawn(puzzle::create_random_puzzle(5, 5));
+                for mut square in &mut  squares_query.iter() {
+                    square.current = square.solution;
+                }
             }
             Interaction::Hovered => {
                 *material = button_materials.hovered;
@@ -61,112 +61,81 @@ fn setup_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     button_materials: Res<UIMaterials>,
-    mut color_materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands
         .spawn(NodeComponents {
             style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                justify_content: JustifyContent::SpaceBetween,
+                size: Size::new(Val::Percent(50.0), Val::Percent(10.0)),
+                position_type: PositionType::Relative,
+                position: Rect {
+                    left: Val::Px(0.0),
+                    top: Val::Px(0.0),
+                    ..Default::default()
+                },
+                align_items: AlignItems::FlexStart,
+                border: Rect::all(Val::Px(2.0)),
                 ..Default::default()
             },
-            material: color_materials.add(Color::NONE.into()),
+            material: button_materials.area_background,
+            ..Default::default()
+        })
+    .with_children(|ui_canvas| {
+        ui_canvas
+            .spawn(ButtonComponents {
+                style: Style {
+                    size: Size::new(Val::Px(150.0), Val::Px(65.0)),
+                    justify_content: JustifyContent::Center,
+                    // vertically center child text
+                    align_items: AlignItems::Center,
+                    ..Default::default()
+                },
+                material: button_materials.normal,
+                ..Default::default()
+            })
+        .with_children(|parent| {
+            parent.spawn(TextComponents {
+                text: Text {
+                    value: "New".to_string(),
+                    font: asset_server
+                        .load(
+                            "assets/fonts/Meslo LG S DZ Regular for Powerline.ttf",
+                        )
+                        .unwrap(),
+                        style: TextStyle {
+                            font_size: 40.0,
+                            color: Color::rgb(0.8, 0.8, 0.8),
+                        },
+                },
+                ..Default::default()
+            });
+        })
+        .spawn(ButtonComponents {
+            style: Style {
+                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
+                justify_content: JustifyContent::Center,
+                // vertically center child text
+                align_items: AlignItems::Center,
+                ..Default::default()
+            },
+            material: button_materials.normal,
             ..Default::default()
         })
         .with_children(|parent| {
-            // Puzzle canvas
-            let puzzle_canvas = NodeComponents {
-                    style: Style {
-                        size: Size::new(Val::Percent(100.0), Val::Percent(90.0)),
-                        position_type: PositionType::Absolute,
-                        position: Rect {
-                            left: Val::Px(0.0),
-                            top: Val::Px(0.0),
-                            ..Default::default()
-                        },
-                        border: Rect::all(Val::Px(2.0)),
-                        ..Default::default()
+            parent.spawn(TextComponents {
+                text: Text {
+                    value: "Solve".to_string(),
+                    font: asset_server
+                        .load(
+                            "assets/fonts/Meslo LG S DZ Regular for Powerline.ttf",
+                        )
+                        .unwrap(),
+                    style: TextStyle {
+                        font_size: 40.0,
+                        color: Color::rgb(0.8, 0.8, 0.8),
                     },
-                    material: color_materials.add(Color::BLACK.into()),
-                    ..Default::default()
-                };
-            parent.spawn(puzzle_canvas).with(PuzzleCanvasMarker{});
-            parent
-                .spawn(NodeComponents {
-                    style: Style {
-                        size: Size::new(Val::Percent(50.0), Val::Percent(10.0)),
-                        position_type: PositionType::Relative,
-                        position: Rect {
-                            left: Val::Px(0.0),
-                            top: Val::Px(0.0),
-                            ..Default::default()
-                        },
-                        align_items: AlignItems::FlexStart,
-                        border: Rect::all(Val::Px(2.0)),
-                        ..Default::default()
-                    },
-                    material: button_materials.area_background,
-                    ..Default::default()
-                })
-                .with(UICanvasMarker {})
-                .with_children(|ui_canvas| {
-                    ui_canvas
-                        .spawn(ButtonComponents {
-                            style: Style {
-                                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
-                                justify_content: JustifyContent::Center,
-                                // vertically center child text
-                                align_items: AlignItems::Center,
-                                ..Default::default()
-                            },
-                            material: button_materials.normal,
-                            ..Default::default()
-                        })
-                        .with_children(|parent| {
-                            parent.spawn(TextComponents {
-                                text: Text {
-                                    value: "New".to_string(),
-                                    font: asset_server
-                                        .load(
-                                            "assets/fonts/Meslo LG S DZ Regular for Powerline.ttf",
-                                        )
-                                        .unwrap(),
-                                    style: TextStyle {
-                                        font_size: 40.0,
-                                        color: Color::rgb(0.8, 0.8, 0.8),
-                                    },
-                                },
-                                ..Default::default()
-                            });
-                        })
-                        .spawn(ButtonComponents {
-                            style: Style {
-                                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
-                                justify_content: JustifyContent::Center,
-                                // vertically center child text
-                                align_items: AlignItems::Center,
-                                ..Default::default()
-                            },
-                            material: button_materials.normal,
-                            ..Default::default()
-                        })
-                        .with_children(|parent| {
-                            parent.spawn(TextComponents {
-                                text: Text {
-                                    value: "Solve".to_string(),
-                                    font: asset_server
-                                        .load(
-                                            "assets/fonts/Meslo LG S DZ Regular for Powerline.ttf",
-                                        )
-                                        .unwrap(),
-                                    style: TextStyle {
-                                        font_size: 40.0,
-                                        color: Color::rgb(0.8, 0.8, 0.8),
-                                    },
-                                },
-                                ..Default::default()
-                            });
-                        });
-                });
+                },
+                ..Default::default()
+            });
         });
+    });
 }
