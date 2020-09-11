@@ -5,16 +5,17 @@ pub struct SquarePlugin;
 
 impl Plugin for SquarePlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_system(square_state_system.system());
+        app
+            .init_resource::<SquareMaterials>()
+            .add_system(square_state_system.system());
     }
 }
-
 
 #[derive(Clone, Debug, Copy)]
 pub enum SquareState {
     Filled,
     Empty,
-    _Crossed
+    _Crossed,
 }
 
 impl Default for SquareState {
@@ -38,16 +39,32 @@ impl Default for Square {
     }
 }
 
-pub fn square_state_system(
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    entities: Query<&mut Handle<ColorMaterial>>,
-    mut query: Query<(Entity, Changed<Square>)>) {
-    for (entity, square) in &mut query.iter() {
-        let mut sprite = entities.get_mut::<Handle<ColorMaterial>>(entity).unwrap();
+struct SquareMaterials {
+    empty: Handle<ColorMaterial>,
+    filled: Handle<ColorMaterial>,
+    crossed: Handle<ColorMaterial>,
+}
+
+impl FromResources for SquareMaterials {
+    fn from_resources(resources: &Resources) -> Self {
+        let mut materials = resources.get_mut::<Assets<ColorMaterial>>().unwrap();
+        SquareMaterials {
+            empty: materials.add(Color::rgb(0.1, 0.1, 0.1).into()),
+            filled: materials.add(Color::rgb(0.1, 0.1, 0.9).into()),
+            crossed: materials.add(Color::rgb(0.1, 0.1, 0.9).into()),
+        }
+    }
+}
+
+fn square_state_system(
+    materials: Res<SquareMaterials>,
+    mut query: Query<(Changed<Square>, &mut Handle<ColorMaterial>)>,
+) {
+    for (square, mut material) in &mut query.iter() {
         match square.current {
-            SquareState::Empty => *sprite = materials.add(Color::rgb(0.1, 0.1, 0.1).into()),
-            SquareState::Filled => *sprite = materials.add(Color::rgb(0.1, 0.1, 0.9).into()),
-            SquareState::_Crossed => *sprite = materials.add(Color::rgb(0.1, 0.1, 0.9).into()),
+            SquareState::Empty => *material = materials.empty,
+            SquareState::Filled => *material = materials.filled,
+            SquareState::_Crossed => *material = materials.crossed,
         }
     }
 }

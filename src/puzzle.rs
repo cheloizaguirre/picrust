@@ -1,6 +1,6 @@
-use bevy::prelude::*;
 use crate::square::{Square, SquareState};
 use array2d::Array2D;
+use bevy::prelude::*;
 use rand::Rng;
 
 #[derive(Bundle)]
